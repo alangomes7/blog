@@ -1,20 +1,11 @@
-'use client';
-
-import clsx from 'clsx';
-
 type ContainerProps = {
   children: React.ReactNode;
 };
 
-export default function Container({ children }: ContainerProps) {
+export function Container({ children }: ContainerProps) {
   return (
-    <div
-      className={clsx(
-        'bg-slate-50 min-h-screen text-slate-950',
-        'max-w-screen-lg mx-auto',
-      )}
-    >
-      {children}
+    <div className='text-slate-900 bg-slate-100 min-h-screen'>
+      <div className='max-w-screen-lg mx-auto px-8'>{children}</div>
     </div>
   );
 }

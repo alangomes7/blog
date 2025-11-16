@@ -1,5 +1,3 @@
-'use client';
-
 import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
@@ -9,19 +7,20 @@ type SafeMarkdownProps = {
   markdown: string;
 };
 
-export default function SafeMarkdown({ markdown }: SafeMarkdownProps) {
+export function SafeMarkdown({ markdown }: SafeMarkdownProps) {
   return (
     <div
       className={clsx(
-        'w-full max-w-none overflow-hidden',
         'prose prose-slate',
-        'prose-a:text-blue-500',
+        'w-full max-w-none',
+        'overflow-hidden',
+        'prose-a:transition',
         'prose-a:no-underline',
+        'prose-a:text-blue-500',
         'prose-a:hover:text-blue-700',
         'prose-a:hover:underline',
-        'prose-a:transition',
         'prose-img:mx-auto',
-        'md:prose-lg',
+        'lg:prose-lg',
       )}
     >
       <ReactMarkdown
@@ -30,9 +29,10 @@ export default function SafeMarkdown({ markdown }: SafeMarkdownProps) {
         components={{
           table: ({ node, ...props }) => {
             if (!node?.children) return '';
+
             return (
               <div className='overflow-x-auto'>
-                <table className='w-full min-w-[600px' {...props}></table>
+                <table className='w-full min-w-[600px]' {...props} />
               </div>
             );
           },

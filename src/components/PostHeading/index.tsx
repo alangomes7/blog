@@ -1,29 +1,27 @@
-'use client';
-
 import clsx from 'clsx';
 import Link from 'next/link';
 
 type PostHeadingProps = {
-  children: string;
+  children: React.ReactNode;
   url: string;
   as?: 'h1' | 'h2';
-  className?: string;
 };
 
-export default function PostHeading({
+export function PostHeading({
   children,
   url,
   as: Tag = 'h2',
-  className,
 }: PostHeadingProps) {
-  const headingClassMap = {
+  const headingClassesMap = {
     h1: 'text-2xl/tight sm:text-4xl font-extrabold',
     h2: 'text-2xl/tight font-bold',
   };
 
+  const commonClasses = '';
+
   return (
-    <Tag className={clsx(headingClassMap[Tag], className)}>
-      <Link className={clsx('hover:text-slate-800 transition')} href={url}>
+    <Tag className={clsx(headingClassesMap[Tag], commonClasses)}>
+      <Link className='group-hover:text-slate-600 transition' href={url}>
         {children}
       </Link>
     </Tag>

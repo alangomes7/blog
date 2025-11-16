@@ -1,20 +1,12 @@
-'use client';
-
-import { clsx } from 'clsx';
 import Link from 'next/link';
-type FooterProps = {
-  text?: string;
-};
-export default function Footer({ text }: FooterProps) {
+
+export function Footer() {
   return (
-    <footer>
-      <div className={clsx('text-center')}>
-        <h1>{text}</h1>
-        <p>
-          Copyright &copy; {new Date().getFullYear()} -{' '}
-          <Link href='/'>The Blog</Link>
-        </p>
-      </div>
+    <footer className='pb-16 text-center'>
+      <p>
+        <span>Copyright &copy; {new Date().getFullYear()} - </span>
+        <Link href='/'>The Blog</Link>
+      </p>
     </footer>
   );
 }
