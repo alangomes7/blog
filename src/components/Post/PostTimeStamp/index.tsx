@@ -1,3 +1,5 @@
+'use client';
+
 import { formatDatetimeTimeAgoWithSuffix } from '@/lib/utils';
 import clsx from 'clsx';
 

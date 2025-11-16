@@ -1,14 +1,18 @@
+'use client';
+
 import clsx from 'clsx';
 
 type ErrorMessageProps = {
   pageTitle: string;
   contentTitle: string;
   content: React.ReactNode;
+  reset?: () => void;
 };
 export default function ErrorMessage({
   pageTitle,
   contentTitle,
   content,
+  reset,
 }: ErrorMessageProps) {
   return (
     <>
@@ -26,6 +30,11 @@ export default function ErrorMessage({
             {contentTitle}
           </h1>
           <div>{content}</div>
+          {reset && (
+            <button onClick={() => reset()} className='btn btn-primary'>
+              Tentar novamente
+            </button>
+          )}
         </div>
       </div>
     </>

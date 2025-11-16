@@ -1,3 +1,5 @@
+'use server';
+
 import { PostPreview } from '@/components';
 import { findAllPublicPostsCached } from '@/lib/post';
 

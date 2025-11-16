@@ -1,3 +1,5 @@
+'use client';
+
 type PostDescriptionProps = {
   children: React.ReactNode;
 };

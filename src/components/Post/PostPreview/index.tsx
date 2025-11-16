@@ -1,12 +1,10 @@
 'use client';
 
 import clsx from 'clsx';
-import {
-  PostCoverImage,
-  PostTimeStamp,
-  PostHeading,
-  PostDescription,
-} from '@/components';
+import PostCoverImage from '../PostCoverImage';
+import PostTimeStamp from '../PostTimeStamp';
+import PostHeading from '../PostHeading';
+import PostDescription from '../PostDescription';
 
 type PostPreviewProps = {
   image: {

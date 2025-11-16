@@ -1,3 +1,5 @@
+'use client';
+
 import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';

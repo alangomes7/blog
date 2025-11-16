@@ -1,6 +1,8 @@
+'use server';
+
 import { ErrorMessage } from '@/components';
 
-export default function NotFoundPage() {
+export default async function NotFoundPage() {
   return (
     <ErrorMessage
       pageTitle='Página não encontrada'
