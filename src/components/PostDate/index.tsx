@@ -1,3 +1,5 @@
+'use client';
+
 import { formatDatetime, formatDistanceToNow } from '@/utils/format-datetime';
 
 type PostDateProps = {
