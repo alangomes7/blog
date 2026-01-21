@@ -1,0 +1,47 @@
+/* 1. Tune CSS for Perfect PDF Output */
+* {
+  -webkit-print-color-adjust: exact !important; /* Force background colors/images */
+  print-color-adjust: exact !important;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica', 'Arial', sans-serif; /* Use web-safe or embedded fonts */
+  font-size: 12pt;
+  line-height: 1.5;
+}
+
+/* 2. A4-Safe Layout Helper */
+/* Use this wrapper to preview/constrain content to A4 printable area minus margins */
+.a4-safe-area {
+  width: 100%;
+  max-width: 170mm; /* 210mm A4 width - 40mm total side margins */
+  margin: 0 auto;
+}
+
+/* 3. Smart Page-Breaks by Element */
+.avoid-break {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.force-break {
+  page-break-before: always;
+  break-before: always;
+}
+
+/* Optimize tables for split pages */
+table,
+tr,
+td,
+th {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Utility for debugging layout boundaries */
+.debug-layout {
+  border: 1px solid red;
+}

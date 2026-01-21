@@ -1,12 +1,17 @@
-import { PostModel } from '@/models/post/post-model';
+import { PostModel } from '@/models/post-model';
 import { PostRepository } from './post-repository';
 import { drizzleDb } from '@/db/drizzle';
 import { and } from 'drizzle-orm';
+import { logColor } from '@/utils/logger-color';
+import { simulateWait } from '@/utils/simulate-wait';
+import { SIMULATE_WAIT_IN_MS } from '@/lib/constants';
 
 export class DrizzlePostRepository implements PostRepository {
   // Public methods
 
   async findAllPublic(): Promise<PostModel[]> {
+    await simulateWait(SIMULATE_WAIT_IN_MS, true);
+    logColor('findallPublic', Date.now());
     const posts = await drizzleDb.query.posts.findMany({
       orderBy: (posts, { desc }) => desc(posts.createdAt),
       where: (posts, { eq }) => eq(posts.published, true),
@@ -15,6 +20,9 @@ export class DrizzlePostRepository implements PostRepository {
   }
 
   async findBySlugPublic(slug: string): Promise<PostModel> {
+    await simulateWait(SIMULATE_WAIT_IN_MS, true);
+    logColor('findBySlugPublic', Date.now());
+
     const post = await drizzleDb.query.posts.findFirst({
       where: (posts, { eq }) =>
         and(eq(posts.slug, slug), eq(posts.published, true)),
@@ -28,6 +36,9 @@ export class DrizzlePostRepository implements PostRepository {
   // Private methods
 
   async findAll(): Promise<PostModel[]> {
+    await simulateWait(SIMULATE_WAIT_IN_MS, true);
+    logColor('findAll', Date.now());
+
     const posts = await drizzleDb.query.posts.findMany({
       orderBy: (posts, { desc }) => desc(posts.createdAt),
     });
@@ -35,6 +46,9 @@ export class DrizzlePostRepository implements PostRepository {
   }
 
   async findById(id: string): Promise<PostModel> {
+    await simulateWait(SIMULATE_WAIT_IN_MS, true);
+    logColor('findById', Date.now());
+
     const post = await drizzleDb.query.posts.findFirst({
       where: (posts, { eq }) => eq(posts.id, id),
     });
@@ -44,10 +58,3 @@ export class DrizzlePostRepository implements PostRepository {
     return post;
   }
 }
-
-(async () => {
-  const repo = new DrizzlePostRepository();
-  const posts = await repo.findAll();
-
-  posts.forEach(post => console.log(post.slug, post.published));
-})();
