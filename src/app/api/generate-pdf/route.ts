@@ -12,17 +12,16 @@ export async function POST(req: Request) {
       });
     }
 
-    // Load external CSS
-    const cssPath = path.join(process.cwd(), 'styles', 'pdf.css');
+    // process.cwd() is the root of the project
+    const cssPath = path.join(process.cwd(), 'src', 'styles', 'pdf.css');
+
+    // Read the CSS file
     const cssContent = await fs.readFile(cssPath, 'utf-8');
 
     const browser = await getBrowser();
     const page = await browser.newPage();
 
-    // Set content
     await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    // Inject the external CSS modularly
     await page.addStyleTag({ content: cssContent });
 
     const pdfBuffer = await page.pdf({
@@ -34,7 +33,15 @@ export async function POST(req: Request) {
         left: '20mm',
         right: '20mm',
       },
-      displayHeaderFooter: true, // page numbers
+      displayHeaderFooter: true,
+      // 1. Empty header to hide default date/title
+      headerTemplate: '<div></div>',
+      // 2. Footer containing only the page number logic
+      footerTemplate: `
+    <div style="font-size: 12px; width: 100%; text-align: center;">
+      <span class="pageNumber"></span>
+    </div>
+  `,
     });
 
     await browser.close();
@@ -47,6 +54,11 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('PDF Generation Error:', error);
+    console.error(
+      'Checked CSS Path:',
+      path.join(process.cwd(), 'src', 'styles', 'pdf.css'),
+    );
+
     return new Response(JSON.stringify({ error: 'Failed to generate PDF' }), {
       status: 500,
     });

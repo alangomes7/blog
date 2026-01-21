@@ -8,8 +8,12 @@ import {
   type ForwardedRef,
 } from 'react';
 import { Crepe } from '@milkdown/crepe';
+import { upload, uploadConfig } from '@milkdown/plugin-upload';
+import { Decoration } from 'prosemirror-view';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
+import clsx from 'clsx';
+import '@/styles/milkdown-overrides.css';
 
 interface MilkdownEditorProps {
   defaultValue?: string;
@@ -27,11 +31,8 @@ function MilkdownEditorImplementation(
   const editorRef = useRef<HTMLDivElement>(null);
   const crepeRef = useRef<Crepe | null>(null);
 
-  // Expose methods to the parent via ref
   useImperativeHandle(ref, () => ({
-    getMarkdown: () => {
-      return crepeRef.current ? crepeRef.current.getMarkdown() : '';
-    },
+    getMarkdown: () => crepeRef.current?.getMarkdown() ?? '',
   }));
 
   useEffect(() => {
@@ -39,28 +40,74 @@ function MilkdownEditorImplementation(
 
     const crepe = new Crepe({
       root: editorRef.current,
-      defaultValue: defaultValue,
+      defaultValue,
     });
 
-    // Set editable/readonly state
-    crepe.setReadonly(readOnly);
+    crepe.editor.use(upload);
 
-    crepeRef.current = crepe;
+    crepe.editor.config(ctx => {
+      ctx.set(uploadConfig.key, {
+        enableHtmlFileUploader: true,
+
+        uploadWidgetFactory: (pos, spec) => {
+          const el = document.createElement('div');
+          el.className = 'milkdown-upload-widget';
+          el.innerText = 'Uploading...';
+          return Decoration.widget(pos, el, spec);
+        },
+
+        uploader: async (files, schema) => {
+          const fileArray = Array.from(files);
+
+          return Promise.all(
+            fileArray.map(async file => {
+              const formData = new FormData();
+              formData.append('file', file);
+
+              const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+
+              if (!response.ok) {
+                throw new Error('Upload failed');
+              }
+
+              const data = await response.json();
+
+              return schema.nodes.image.create({
+                src: data.url,
+                alt: data.alt ?? file.name,
+                title: file.name,
+              });
+            }),
+          );
+        },
+      });
+    });
+
     crepe.create();
+    crepeRef.current = crepe;
 
     return () => {
-      crepeRef.current?.destroy();
+      crepe.destroy();
       crepeRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!crepeRef.current) return;
+    crepeRef.current.setReadonly(readOnly);
+  }, [readOnly]);
+
   return (
-    <div
-      ref={editorRef}
-      className='milkdown-container'
-      style={{ minHeight: '100%', height: '100%' }}
-    />
+    <div className='relative w-full h-full'>
+      <div
+        ref={editorRef}
+        className={clsx('milkdown-container', 'milkdown-overrides')}
+        style={{ minHeight: '100%', height: '100%' }}
+      />
+    </div>
   );
 }
 

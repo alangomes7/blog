@@ -1,0 +1,39 @@
+/* milkdown-overrides.css */
+
+/* 1. Reset Editor Width & Spacing */
+/* Forces the editor to fill the container instead of fixed width */
+.milkdown-mobile-overrides .ProseMirror {
+  max-width: 100% !important;
+  padding: 0 !important; /* Parent container handles padding now */
+  margin: 0 !important;
+  box-shadow: none !important;
+  box-sizing: border-box;
+}
+
+/* 2. Responsive Images */
+/* Ensures images never exceed screen width */
+.milkdown-mobile-overrides .ProseMirror img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin: 0.5rem auto;
+}
+
+/* 3. Internal Table Scrolling */
+/* Makes just the table scroll horizontally if it's too wide,
+   preventing the whole page from breaking */
+.milkdown-mobile-overrides .ProseMirror table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+}
+
+/* 4. Code Blocks */
+/* Ensures code blocks don't push width out */
+.milkdown-mobile-overrides .ProseMirror pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap; /* Optional: Wrap text on mobile vs scroll */
+  word-break: break-word;
+}

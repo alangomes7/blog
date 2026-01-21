@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import MilkdownEditor, { type MilkdownRef } from './MilkdownEditor';
+import { sanitizeHtml, sanitizeMarkdown } from '@/utils/code-sanitizer';
 
 type ViewMode = 'raw' | 'web' | 'print';
 
@@ -22,17 +23,14 @@ export default function PostEditor() {
     let isMounted = true;
 
     const generatePdfPreview = async () => {
-      // Only run this if we are in print mode
       if (viewMode !== 'print') return;
 
       try {
         setIsLoadingPdf(true);
-        // Clean up previous URL to avoid memory leaks
         if (pdfUrl) URL.revokeObjectURL(pdfUrl);
         setPdfUrl(null);
 
-        // Small delay to ensure MilkdownEditor is mounted/rendered in the DOM
-        // (especially if coming from 'raw' mode)
+        // Small delay to allow render
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const element = document.querySelector(
@@ -42,13 +40,17 @@ export default function PostEditor() {
           throw new Error('Editor content not found for PDF generation');
         }
 
-        const response = await fetch('src/api/generate-pdf', {
+        // 1. Sanitize the Rendered HTML before sending to API (RENDER TIME)
+        const cleanHtml = sanitizeHtml(element.innerHTML);
+
+        const response = await fetch('/api/generate-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html: element.innerHTML }),
+          body: JSON.stringify({ html: cleanHtml }),
         });
 
-        if (!response.ok) throw new Error('PDF generation failed');
+        if (!response.ok)
+          throw new Error('PDF generation failed' + response.text());
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -70,11 +72,10 @@ export default function PostEditor() {
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
 
   const handleTabChange = (newMode: ViewMode) => {
-    // Sync Raw -> Content before switching
+    // 2. Logic when LEAVING 'web' or 'print' mode back to 'raw'
     if (viewMode !== 'raw' && newMode === 'raw' && milkdownRef.current) {
       const currentMarkdown = milkdownRef.current.getMarkdown();
       setContent(currentMarkdown);
@@ -82,19 +83,44 @@ export default function PostEditor() {
     setViewMode(newMode);
   };
 
-  const handleSave = () => {
+  // Inside PostEditor.tsx
+
+  const handleSave = async () => {
     let contentToSave = content;
+
+    // 1. Get the latest markdown from the editor
     if (viewMode !== 'raw' && milkdownRef.current) {
       contentToSave = milkdownRef.current.getMarkdown();
-      setContent(contentToSave);
     }
-    console.log('Saving:', contentToSave);
-    alert(`Saved! (${contentToSave.length} chars)`);
+
+    // 2. Sanitize
+    const cleanContent = sanitizeMarkdown(contentToSave);
+
+    // 3. Send to Server (Example)
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: cleanContent,
+          // title: titleState, // if you have a title
+          // date: new Date(),
+        }),
+      });
+
+      if (response.ok) {
+        alert('Post saved successfully!');
+        setContent(cleanContent);
+      } else {
+        alert('Error saving post');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error');
+    }
   };
 
-  // Optimized Download: Uses existing Blob if available, else generates new one
   const handleDownloadPdf = async () => {
-    // If we already have the PDF preview loaded, just download that blob
     if (viewMode === 'print' && pdfUrl) {
       const a = document.createElement('a');
       a.href = pdfUrl;
@@ -105,16 +131,19 @@ export default function PostEditor() {
       return;
     }
 
-    // Fallback: Generate from scratch (e.g. if called from Web view directly)
     const element = document.querySelector('.milkdown-container .ProseMirror');
     if (!element) return;
 
     try {
-      setIsLoadingPdf(true); // Re-use the loading state for UI feedback
+      setIsLoadingPdf(true);
+
+      // 4. Sanitize HTML for manual download (RENDER TIME)
+      const cleanHtml = sanitizeHtml(element.innerHTML);
+
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: element.innerHTML }),
+        body: JSON.stringify({ html: cleanHtml }),
       });
 
       if (!response.ok) throw new Error('PDF generation failed');
@@ -137,14 +166,14 @@ export default function PostEditor() {
   };
 
   return (
-    <div className='w-full max-w-6xl mx-auto my-8 flex flex-col h-[85vh]'>
-      {/* --- HEADER / TABS --- */}
-      <div className='flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-t-lg shadow-sm z-10'>
-        <div className='flex bg-gray-100 p-1 rounded-lg border border-gray-200'>
+    <div className='w-full max-w-6xl mx-auto my-2 md:my-8 flex flex-col h-[90vh] md:h-[85vh]'>
+      <div className='flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-2 md:px-4 md:py-3 bg-white border border-gray-200 rounded-t-lg shadow-sm z-10'>
+        {/* View Mode Toggles */}
+        <div className='flex justify-center md:justify-start bg-gray-100 p-1 rounded-lg border border-gray-200'>
           <button
             type='button'
             onClick={() => handleTabChange('raw')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 md:px-4 text-xs md:text-sm font-medium rounded-md transition-all ${
               viewMode === 'raw'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -155,7 +184,7 @@ export default function PostEditor() {
           <button
             type='button'
             onClick={() => handleTabChange('web')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 md:px-4 text-xs md:text-sm font-medium rounded-md transition-all ${
               viewMode === 'web'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -166,7 +195,7 @@ export default function PostEditor() {
           <button
             type='button'
             onClick={() => handleTabChange('print')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 md:px-4 text-xs md:text-sm font-medium rounded-md transition-all ${
               viewMode === 'print'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -176,13 +205,14 @@ export default function PostEditor() {
           </button>
         </div>
 
-        <div className='flex gap-3 items-center'>
+        {/* Action Buttons */}
+        <div className='flex gap-2 items-center justify-end'>
           {viewMode === 'print' && (
             <button
               type='button'
               onClick={handleDownloadPdf}
               disabled={isLoadingPdf}
-              className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50'
+              className='flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50'
             >
               {isLoadingPdf ? 'Gerando...' : 'Exportar PDF'}
             </button>
@@ -191,7 +221,7 @@ export default function PostEditor() {
           <button
             type='button'
             onClick={handleSave}
-            className='px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 transition-colors'
+            className='px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 transition-colors'
           >
             Save
           </button>
@@ -207,7 +237,7 @@ export default function PostEditor() {
       >
         {viewMode === 'raw' && (
           <textarea
-            className='w-full h-full p-6 resize-none outline-none font-mono text-sm text-gray-800 bg-white'
+            className='w-full h-full p-4 md:p-6 resize-none outline-none font-mono text-sm text-gray-800 bg-white'
             value={content}
             onChange={e => setContent(e.target.value)}
             placeholder='# Start typing...'
@@ -215,17 +245,16 @@ export default function PostEditor() {
           />
         )}
 
-        {/* We render the editor for both 'web' and 'print' modes.
-          In 'print' mode, we hide it visually but keep it in DOM so we can scrape the HTML for the backend.
-        */}
         {viewMode !== 'raw' && (
           <>
             <div
               className={`h-full overflow-y-auto w-full transition-all duration-300 ${
-                viewMode === 'print' ? 'hidden' : 'block'
+                viewMode === 'print'
+                  ? 'absolute top-0 left-0 opacity-0 pointer-events-none -z-10'
+                  : 'block'
               }`}
             >
-              <div className='max-w-4xl min-h-full px-8 py-8 mx-auto'>
+              <div className='max-w-4xl min-h-full w-full px-4 py-4 md:px-8 md:py-8 mx-auto overflow-x-auto'>
                 <MilkdownEditor
                   ref={milkdownRef}
                   key='editor-instance'
@@ -235,7 +264,6 @@ export default function PostEditor() {
               </div>
             </div>
 
-            {/* The Actual PDF Preview Iframe */}
             {viewMode === 'print' && (
               <div className='w-full h-full flex items-center justify-center'>
                 {isLoadingPdf ? (
@@ -247,7 +275,7 @@ export default function PostEditor() {
                   </div>
                 ) : pdfUrl ? (
                   <iframe
-                    src={`${pdfUrl}#toolbar=0&view=FitH`} // PDF viewer params
+                    src={`${pdfUrl}#toolbar=0&view=FitH`}
                     className='w-full h-full border-none'
                     title='PDF Preview'
                   />

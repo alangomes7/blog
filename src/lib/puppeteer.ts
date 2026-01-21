@@ -3,7 +3,6 @@ import chromium from '@sparticuz/chromium';
 
 export const getExecutablePath = async () => {
   if (process.env.NODE_ENV === 'development') {
-    // Adjust this path to your local Chrome/Chromium installation
     return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
   }
   return await chromium.executablePath();

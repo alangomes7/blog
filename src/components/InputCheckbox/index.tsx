@@ -17,7 +17,7 @@ export default function InputCheckbox({
       <input
         {...props}
         className={clsx(
-          'w-4 h-4 outline-none focus:ring-2 focus:ring-blue-600',
+          'w-4 h-4 accent-blue-600 ring-1 focus:ring-2 focus:ring-blue-600',
           props.className,
         )}
         id={id}
